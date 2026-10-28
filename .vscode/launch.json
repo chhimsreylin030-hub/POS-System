@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Food Delivery (Web - Edge on :8085)",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "edge",
+            "args": [
+                "--web-port=8085",
+                "--web-hostname=127.0.0.1"
+            ]
+        },
+        {
+            "name": "Food Delivery (Web - Chrome on :8085)",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "chrome",
+            "args": [
+                "--web-port=8085",
+                "--web-hostname=127.0.0.1"
+            ]
+        },
+        {
+            "name": "Food Delivery (Web Server - 127.0.0.1:8085)",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "web-server",
+            "args": [
+                "--web-port=8085",
+                "--web-hostname=127.0.0.1"
+            ]
+        }
+    ]
+}
