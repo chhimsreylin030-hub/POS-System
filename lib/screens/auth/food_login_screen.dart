@@ -53,19 +53,24 @@ class _FoodLoginScreenState extends State<FoodLoginScreen> {
                       // Food Delivery Brand Header
                       Center(
                         child: Container(
-                          padding: const EdgeInsets.all(14),
+                          width: 86,
+                          height: 86,
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.richMagenta, AppColors.vibrantPink],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppColors.softPink.withValues(alpha: 0.8), width: 2),
                             boxShadow: [
-                              BoxShadow(color: AppColors.richMagenta.withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4)),
+                              BoxShadow(color: AppColors.richMagenta.withValues(alpha: 0.25), blurRadius: 16, offset: const Offset(0, 4)),
                             ],
                           ),
-                          child: const Icon(Icons.delivery_dining, size: 38, color: Colors.white),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: Image.asset(
+                              'assets/images/app_logo.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),

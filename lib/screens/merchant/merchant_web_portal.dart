@@ -148,7 +148,16 @@ class _MerchantWebPortalState extends State<MerchantWebPortal> {
                   const SizedBox(height: 10),
                   TextField(controller: imgCtrl, decoration: const InputDecoration(labelText: 'Image Web URL', border: OutlineInputBorder())),
                   const SizedBox(height: 10),
-                  TextField(controller: descCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Short Description', border: OutlineInputBorder())),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Appetizing Dish Description & Ingredients',
+                      hintText: 'e.g. Tender marinated cubed beef with lime-black pepper dipping sauce...',
+                      helperText: 'Shown prominently in the customer app item box and detail view',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -245,15 +254,23 @@ class _MerchantWebPortalState extends State<MerchantWebPortal> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 44,
+                height: 44,
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: AppColors.richMagenta,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(color: AppColors.vibrantPink.withValues(alpha: 0.3), blurRadius: 8),
                   ],
                 ),
-                child: const Icon(Icons.storefront, color: Colors.white, size: 24),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(9),
+                  child: Image.asset(
+                    'assets/images/app_logo.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1324,29 +1341,73 @@ class _MerchantWebPortalState extends State<MerchantWebPortal> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 320,
-                childAspectRatio: 0.82,
+                maxCrossAxisExtent: 340,
+                mainAxisExtent: 355,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
               itemCount: filteredItems.length,
               itemBuilder: (ctx, idx) {
                 final item = filteredItems[idx];
-                return Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.borderLight)),
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderLight),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
+                    ],
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                        child: Image.network(
-                          item.imageUrl,
-                          height: 120,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(height: 120, color: AppColors.blushTint),
-                        ),
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                            child: Image.network(
+                              item.imageUrl,
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 120,
+                                color: AppColors.blushTint,
+                                child: const Icon(Icons.fastfood, size: 40, color: AppColors.richMagenta),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.7),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                item.category,
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: item.isAvailable ? Colors.green.shade700 : Colors.red.shade700,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                item.isAvailable ? 'In Stock' : 'Sold Out',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       Padding(
                         padding: const EdgeInsets.all(12),
@@ -1357,37 +1418,87 @@ class _MerchantWebPortalState extends State<MerchantWebPortal> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
-                                  child: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.deepBerry), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  child: Text(
+                                    item.name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: AppColors.deepBerry),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 const SizedBox(width: 6),
-                                Text('\$${item.priceUSD.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.richMagenta)),
+                                Text(
+                                  '\$${item.priceUSD.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.richMagenta),
+                                ),
                               ],
                             ),
-                            Text(item.khmerName, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    item.khmerName,
+                                    style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Text(
+                                  '• ${state.usdToKhr(item.priceUSD).toStringAsFixed(0)} ៛',
+                                  style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                ),
+                              ],
+                            ),
                             const SizedBox(height: 6),
+                            // Appetizing Description
+                            Text(
+                              item.description.isNotEmpty ? item.description : 'No description provided.',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280), height: 1.35),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 10),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(
-                                  child: Text(item.isAvailable ? 'Available' : 'Sold Out', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: item.isAvailable ? Colors.green : Colors.red), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                Row(
+                                  children: [
+                                    Transform.scale(
+                                      scale: 0.8,
+                                      child: Switch(
+                                        value: item.isAvailable,
+                                        activeThumbColor: AppColors.richMagenta,
+                                        onChanged: (_) => state.toggleItemAvailability(item.id),
+                                      ),
+                                    ),
+                                    Text(
+                                      item.isAvailable ? 'Available' : 'Unavailable',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: item.isAvailable ? Colors.green.shade700 : Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Switch(
-                                  value: item.isAvailable,
-                                  activeThumbColor: AppColors.richMagenta,
-                                  onChanged: (_) => state.toggleItemAvailability(item.id),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.deepBerry),
-                                  onPressed: () => _openAddEditDishDialog(existingItem: item),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.danger),
-                                  onPressed: () => state.deleteMenuItem(item.id),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.deepBerry),
+                                      tooltip: 'Edit Dish',
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () => _openAddEditDishDialog(existingItem: item),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.danger),
+                                      tooltip: 'Delete Dish',
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () => state.deleteMenuItem(item.id),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -1622,12 +1733,22 @@ class _MerchantWebPortalState extends State<MerchantWebPortal> {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          width: 56,
+                          height: 56,
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: Colors.white,
                             shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8),
+                            ],
                           ),
-                          child: const Icon(Icons.restaurant_menu, color: Colors.white, size: 30),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/app_logo.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(

@@ -201,4 +201,95 @@ void main() {
     tester.view.physicalSize = const Size(803.3, 800);
     await tester.pumpAndSettle();
   });
+
+  testWidgets('CustomerFoodApp Cart Navigation tab and top nav icon test', (WidgetTester tester) async {
+    final state = FoodDeliveryState();
+    state.stopAutoConnectHeartbeat();
+
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: CustomerFoodApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify 4 items in BottomNavigationBar: Home, Cart, Tracking, Profile
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Cart'), findsOneWidget);
+    expect(find.text('Tracking'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
+
+    // Tap 'Cart' in bottom navigation bar
+    await tester.tap(find.text('Cart'));
+    await tester.pumpAndSettle();
+
+    // Should display Cart tab (empty state initially)
+    expect(find.text('My Shopping Bag'), findsOneWidget);
+    expect(find.text('Your Bag is Empty'), findsOneWidget);
+    expect(find.text('Explore Restaurants'), findsOneWidget);
+
+    // Tap Explore Restaurants to go back to Home
+    await tester.tap(find.text('Explore Restaurants'));
+    await tester.pumpAndSettle();
+
+    // Should be back on Home tab
+    expect(find.text('Search food, dishes, or restaurants...'), findsOneWidget);
+  });
+
+  testWidgets('Enhanced Item Box and Description test in Customer Food App', (WidgetTester tester) async {
+    final state = FoodDeliveryState();
+    state.stopAutoConnectHeartbeat();
+
+    tester.view.physicalSize = const Size(400, 850);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: CustomerFoodApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap on the first restaurant (Angkor Authentic Kitchen)
+    final firstRestaurant = find.text('Angkor Authentic Kitchen').first;
+    await tester.tap(firstRestaurant);
+    await tester.pumpAndSettle();
+
+    // Verify restaurant detail view opened and dishes are listed
+    expect(find.text('Khmer Beef Lok Lak with Jasmine Rice'), findsOneWidget);
+
+    // Verify the enhanced item box shows the description
+    expect(
+      find.text('Tender marinated cubed beef with lime-black pepper dipping sauce, fried egg, and steamed jasmine rice.'),
+      findsOneWidget,
+    );
+
+    // Verify price in USD ($4.50) and KHR are shown
+    expect(find.text('\$4.50'), findsOneWidget);
+
+    // Tap on the dish item box to open the enhanced detail modal
+    await tester.tap(find.text('Khmer Beef Lok Lak with Jasmine Rice'));
+    await tester.pumpAndSettle();
+
+    // Verify detail modal opened with "About This Dish & Ingredients" section
+    expect(find.text('About This Dish & Ingredients'), findsOneWidget);
+    expect(find.text('Special Requests (Optional)'), findsOneWidget);
+    expect(find.text('Less spicy'), findsOneWidget);
+    expect(find.text('Extra sauce'), findsOneWidget);
+
+    // Tap 'Less spicy' quick request chip
+    await tester.tap(find.text('Less spicy'));
+    await tester.pumpAndSettle();
+
+    // Verify "Add to Bag" button is present and active
+    expect(find.textContaining('Add to Bag'), findsOneWidget);
+    expect(find.byType(ElevatedButton), findsWidgets);
+  });
 }

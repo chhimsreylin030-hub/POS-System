@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartFood Multi-Tenant Platform — Presentation & Architecture Deck</title>
+  <style>
+    :root {
+      --deep-berry: #59123E;
+      --rich-magenta: #8C0057;
+      --vibrant-pink: #F261BB;
+      --soft-pink: #FF99D8;
+      --blush-tint: #FFCCEB;
+      --bg-dark: #1e0915;
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(242, 97, 187, 0.25);
+      --text-white: #ffffff;
+      --text-dim: #f3d5e8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Top Header Bar */
+    header {
+      background: linear-gradient(90deg, var(--deep-berry), var(--rich-magenta));
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .slide-counter {
+      font-size: 0.95rem;
+      color: var(--blush-tint);
+      font-weight: 600;
+    }
+
+    /* Presentation Viewport */
+    .deck-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      width: 92%;
+      max-width: 1200px;
+      height: 88%;
+      background: linear-gradient(145deg, rgba(89, 18, 62, 0.85), rgba(40, 10, 28, 0.95));
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 40px 50px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      display: none;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Slide Typography */
+    .slide-tag {
+      display: inline-block;
+      color: var(--vibrant-pink);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+
+    h1.slide-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #ffffff, var(--blush-tint));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    p.slide-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    /* Content Cards & Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      margin-top: 10px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 10px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--vibrant-pink);
+    }
+
+    .card h3 {
+      font-size: 1.15rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+    }
+
+    .card p, .card li {
+      font-size: 0.92rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .card ul {
+      margin-left: 20px;
+      margin-top: 8px;
+    }
+
+    /* Flow Steps */
+    .flow-step-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      padding: 14px 18px;
+      border-radius: 12px;
+    }
+
+    .flow-number {
+      width: 38px;
+      height: 38px;
+      background: var(--rich-magenta);
+      border: 2px solid var(--vibrant-pink);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .flow-content h4 {
+      font-size: 1.05rem;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .flow-content p {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+    }
+
+    /* Tables */
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.88rem;
+    }
+
+    .styled-table th {
+      background: rgba(140, 0, 87, 0.6);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 700;
+      border-bottom: 2px solid var(--vibrant-pink);
+    }
+
+    .styled-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-dim);
+    }
+
+    .styled-table tr:hover td {
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .badge-primary { background: var(--rich-magenta); color: #fff; }
+    .badge-success { background: #22c55e; color: #fff; }
+    .badge-warning { background: #eab308; color: #000; }
+    .badge-info { background: #3b82f6; color: #fff; }
+
+    /* Bottom Control Bar */
+    footer {
+      background: rgba(0, 0, 0, 0.5);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-btn-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      background: var(--rich-magenta);
+      color: #fff;
+      border: 1px solid var(--vibrant-pink);
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--vibrant-pink);
+      color: var(--deep-berry);
+      box-shadow: 0 0 15px rgba(242, 97, 187, 0.5);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: transparent;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    /* Key indicator pills */
+    .hint-keys {
+      font-size: 0.8rem;
+      color: var(--blush-tint);
+      opacity: 0.7;
+    }
+
+    .hint-keys kbd {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    @media (max-width: 768px) {
+      .slide {
+        padding: 24px 20px;
+        width: 96%;
+        height: 94%;
+      }
+      h1.slide-title { font-size: 1.6rem; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .hint-keys { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Bar -->
+  <header>
+    <div class="brand">
+      <img src="assets/images/app_logo.png" alt="App Logo" style="width: 32px; height: 32px; object-fit: contain; border-radius: 50%; background: white; padding: 2px;">
+      <span>SmartFood Platform</span>
+      <span class="brand-badge">Multi-Tenant Architecture</span>
+    </div>
+    <div class="slide-counter" id="slideCounter">Slide 1 of 8</div>
+  </header>
+
+  <!-- Presentation Slides Viewport -->
+  <div class="deck-container">
+
+    <!-- SLIDE 1: Title & Executive Overview -->
+    <div class="slide active" id="slide-1">
+      <span class="slide-tag">Executive Presentation • POS_DB 2026</span>
+      <h1 class="slide-title">SmartFood Delivery & Merchant POS Platform</h1>
+      <p class="slide-subtitle">A high-performance, multi-tenant food delivery ecosystem connecting Customers, Merchants, Drivers, and Corporate Admins in real-time.</p>
+      
+      <div class="grid-3">
+        <div class="card">
+          <h3>📱 Customer Mobile App</h3>
+          <p>Pixel-perfect mobile experience featuring real-time dish discovery, coupon system, address management, password security, and live order tracking.</p>
+        </div>
+        <div class="card">
+          <h3>🏪 Merchant Web Portal</h3>
+          <p>Isolated corporate portal for 10 corporate restaurant groups. Includes live kitchen ticket feed, audio notifications, and instant menu CRUD.</p>
+        </div>
+        <div class="card">
+          <h3>🛡️ Corporate Admin Console</h3>
+          <p>Super-admin oversight dashboard with multi-store revenue analytics, audit logs, customer CRM, and static delivery driver monitoring.</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 25px; padding: 18px; background: rgba(242,97,187,0.1); border-left: 4px solid var(--vibrant-pink); border-radius: 8px;">
+        <strong style="color: #fff;">💡 Brand Design System:</strong> 
+        <span style="color: var(--blush-tint);">Deep Berry (<code style="color:var(--vibrant-pink)">#59123E</code>), Rich Magenta (<code style="color:var(--vibrant-pink)">#8C0057</code>), Vibrant Pink (<code style="color:var(--vibrant-pink)">#F261BB</code>), Soft Pink (<code style="color:var(--vibrant-pink)">#FF99D8</code>), Blush Tint (<code style="color:var(--vibrant-pink)">#FFCCEB</code>).</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: High-Level 3-Tier Architecture -->
+    <div class="slide" id="slide-2">
+      <span class="slide-tag">System Architecture</span>
+      <h1 class="slide-title">3-Tier Distributed Architecture</h1>
+      <p class="slide-subtitle">Modular decoupling ensures high availability, data consistency, and seamless local development.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>1. Client Layer</h3>
+          <span class="badge badge-primary">Flutter Web / Desktop / Mobile</span>
+          <ul style="margin-top: 12px;">
+            <li>Responsive layouts from 360px mobile to 4K desktop</li>
+            <li>Real-time state with <code>FoodDeliveryState</code></li>
+            <li>Zero RenderFlex overflow with auto-wrapping</li>
+            <li>Hosted locally on port <strong>8085</strong></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>2. Service API Tier</h3>
+          <span class="badge badge-info">Dart REST API Server (Port 8081)</span>
+          <ul style="margin-top: 12px;">
+            <li><code>bin/server.dart</code> standalone HTTP daemon</li>
+            <li>CORS-enabled REST endpoints for Auth, Menu, Orders</li>
+            <li>Auto-detects credentials across all machines</li>
+            <li>Resilient auto-reconnect recovery loop</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>3. Database Tier</h3>
+          <span class="badge badge-success">MySQL 8.0 (Port 3306)</span>
+          <ul style="margin-top: 12px;">
+            <li>Strictly isolated database: <strong><code>pos_db</code></strong></li>
+            <li><code>smartfood_db</code> remains 100% untouched</li>
+            <li>ACID-compliant transactions for payments & orders</li>
+            <li>Automatic connection pooling & schema migrations</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: 10 Corporate Merchant Accounts & Multi-Tenancy -->
+    <div class="slide" id="slide-3">
+      <span class="slide-tag">Tenant Security & Isolation</span>
+      <h1 class="slide-title">10 Corporate Merchant Groups</h1>
+      <p class="slide-subtitle">Strict corporate isolation ensures that merchant partners can never see, modify, or inspect competitor restaurants or orders.</p>
+
+      <div style="overflow-x: auto;">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Corporate Account</th>
+              <th>Corporate Email</th>
+              <th>Reg #</th>
+              <th>Owned Restaurants</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>#1</strong></td>
+              <td>Angkor Food & Heritage Group</td>
+              <td><code>angkor.heritage@gmail.com</code></td>
+              <td><span class="badge badge-primary">AF-2026-001</span></td>
+              <td>Angkor Authentic Kitchen, Khmer Heritage Curry, Siem Reap Bistro</td>
+            </tr>
+            <tr>
+              <td><strong>#2</strong></td>
+              <td>Brown & Artisan Coffee Ventures</td>
+              <td><code>artisan.coffee@gmail.com</code></td>
+              <td><span class="badge badge-primary">BC-2026-002</span></td>
+              <td>Brown Artisan Roastery BKK1, Phnom Penh Specialty Cafe</td>
+            </tr>
+            <tr>
+              <td><strong>#3</strong></td>
+              <td>Smash & Patty Burger Labs</td>
+              <td><code>smash.burger@gmail.com</code></td>
+              <td><span class="badge badge-primary">SB-2026-003</span></td>
+              <td>Smash & Patty Burger BKK1, Royal Patty Burger Toul Kork</td>
+            </tr>
+            <tr>
+              <td><strong>#4</strong></td>
+              <td>Royal Asian Noodle & Dim Sum Co.</td>
+              <td><code>asian.noodles@gmail.com</code></td>
+              <td><span class="badge badge-primary">RN-2026-004</span></td>
+              <td>Royal Asian Noodle Bar, Golden Dragon Dim Sum House</td>
+            </tr>
+            <tr>
+              <td><strong>#5</strong></td>
+              <td>Tokyo Ramen & Sushi Masters</td>
+              <td><code>tokyo.izakaya@gmail.com</code></td>
+              <td><span class="badge badge-primary">TR-2026-005</span></td>
+              <td>Tokyo Tonkotsu Ramen House, Sakura Sushi & Sashimi Bar</td>
+            </tr>
+            <tr>
+              <td><strong>#6-10</strong></td>
+              <td>Bella Napoli, Bangkok Wok, Seoul K-Chicken, Taj Mahal, Green Vitality</td>
+              <td><code>*.corporate@gmail.com</code></td>
+              <td><span class="badge badge-primary">CORP-2026</span></td>
+              <td>11 additional specialty dining establishments across the city</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--blush-tint); margin-top: 12px;">* All corporate accounts pre-configured with default password: <code>123456</code>.</p>
+    </div>
+
+    <!-- SLIDE 4: Customer Privacy & Complete Data Wipe -->
+    <div class="slide" id="slide-4">
+      <span class="slide-tag">Privacy & Lifecycle</span>
+      <h1 class="slide-title">Customer Privacy & Logout Data Wipe</h1>
+      <p class="slide-subtitle">Guests can freely browse the catalog, but upon logout all user-specific data vanishes cleanly from client memory.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>🔒 Authenticated Session</h3>
+          <ul>
+            <li><strong>Saved Addresses & Notes:</strong> User can view, add, and dynamically edit delivery locations.</li>
+            <li><strong>Password Visibility:</strong> Interactive show/hide eye toggle during password typing.</li>
+            <li><strong>Custom Invoices:</strong> <code>pos_db.transactions</code> filtered strictly by customer ID.</li>
+            <li><strong>Loyalty Tier:</strong> Silver, Gold, or VIP status with active discount point balance.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>💨 Instant Logout Vanishing</h3>
+          <ul>
+            <li><strong>Cart Wipe:</strong> <code>cartItems.clear()</code> and <code>cartMerchant = null</code> executed immediately.</li>
+            <li><strong>Order History Erasure:</strong> Past invoices reset to empty list so next user cannot view records.</li>
+            <li><strong>Active Tracking Reset:</strong> Active live delivery tracker dismissed instantly.</li>
+            <li><strong>Zero Storage Leakage:</strong> Sensitive customer tokens and profile objects cleared from memory.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h3>🛡️ Multi-User Independence</h3>
+        <p>User A and User B share zero local state. Logging out of Account A completely purges local storage before Account B signs in, adhering to GDPR-compliant transient session handling.</p>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Real-Time Order & Delivery Lifecycle -->
+    <div class="slide" id="slide-5">
+      <span class="slide-tag">Order Pipeline</span>
+      <h1 class="slide-title">Real-Time Kitchen & Delivery Pipeline</h1>
+      <p class="slide-subtitle">Step-by-step synchronization between customer order placement, merchant kitchen acceptance, and driver dispatch.</p>
+
+      <div class="flow-step-container">
+        <div class="flow-row">
+          <div class="flow-number">1</div>
+          <div class="flow-content">
+            <h4>Customer Places Order (Status: PENDING)</h4>
+            <p>Customer selects items, chooses Payment Method (Cash on Delivery or Card), and confirms checkout. Order inserted into <code>pos_db.transactions</code>.</p>
+          </div>
+        </div>
+
+        <div class="flow-row">
+          <div class="flow-number">2</div>
+          <div class="flow-content">
+            <h4>Merchant Audio/Visual Notification Alert</h4>
+            <p>Merchant Web Portal receives new ticket via 3-second auto-poll. Prominent pink alert banner appears with order total, customer notes, and action button.</p>
+          </div>
+        </div>
+
+        <div class="flow-row">
+          <div class="flow-number">3</div>
+          <div class="flow-content">
+            <h4>Kitchen Accepts & Dispatches Driver (Status: DELIVERING)</h4>
+            <p>Merchant clicks "Agree & Accept Dish". Order status updates in MySQL. Assigned driver (Sokha Chea) is dispatched. Customer tracker advances in real time.</p>
+          </div>
+        </div>
+
+        <div class="flow-row">
+          <div class="flow-number">4</div>
+          <div class="flow-content">
+            <h4>Order Delivered & Completed (Status: COMPLETED)</h4>
+            <p>Merchant or Driver marks ticket complete. Revenue added to merchant sales ledger. Customer tracking advances to "Delivered • Enjoy Meal".</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: MySQL Database Schema (pos_db) -->
+    <div class="slide" id="slide-6">
+      <span class="slide-tag">Database Architecture</span>
+      <h1 class="slide-title">MySQL Relational Schema (<code>pos_db</code>)</h1>
+      <p class="slide-subtitle">Normalized relational structure designed for performance, multi-store scalability, and clean audit trails.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>🏢 merchant_accounts</h3>
+          <p><strong>Corporate Parent Entity</strong></p>
+          <ul>
+            <li><code>id</code> (PK, auto_increment)</li>
+            <li><code>account_name</code> & <code>email</code> (Unique)</li>
+            <li><code>company_reg_number</code></li>
+            <li><code>password</code> (Hashed or verified)</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🏪 merchants</h3>
+          <p><strong>Physical Restaurant Outlets</strong></p>
+          <ul>
+            <li><code>id</code> (PK)</li>
+            <li><code>account_id</code> (FK → merchant_accounts)</li>
+            <li><code>name</code> & <code>khmer_name</code></li>
+            <li><code>cuisine</code>, <code>rating</code>, <code>delivery_fee</code></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🍲 products</h3>
+          <p><strong>Menu Dishes & Inventory</strong></p>
+          <ul>
+            <li><code>id</code> (PK)</li>
+            <li><code>merchant_id</code> (FK → merchants)</li>
+            <li><code>name</code> & <code>selling_price</code></li>
+            <li><code>category</code>, <code>image_url</code></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>👤 customers</h3>
+          <p><strong>User Registry & Loyalty</strong></p>
+          <ul>
+            <li><code>id</code> (PK)</li>
+            <li><code>phone</code> (Unique) & <code>email</code></li>
+            <li><code>password</code> & <code>default_address</code></li>
+            <li><code>membership_tier</code>, <code>loyalty_points</code></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🧾 transactions</h3>
+          <p><strong>Orders & Invoices</strong></p>
+          <ul>
+            <li><code>id</code> (PK)</li>
+            <li><code>invoice_number</code> (Unique)</li>
+            <li><code>merchant_id</code> & <code>customer_id</code></li>
+            <li><code>grand_total_usd</code>, <code>status</code></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>📦 transaction_items</h3>
+          <p><strong>Line Item Breakdown</strong></p>
+          <ul>
+            <li><code>id</code> (PK)</li>
+            <li><code>transaction_id</code> (FK)</li>
+            <li><code>product_id</code> (FK)</li>
+            <li><code>quantity</code>, <code>line_total</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: UX Upgrades & Small Screen Responsiveness -->
+    <div class="slide" id="slide-7">
+      <span class="slide-tag">Quality & Responsive Engineering</span>
+      <h1 class="slide-title">Responsive UI & Accessibility Upgrades</h1>
+      <p class="slide-subtitle">Engineered to eliminate rendering exceptions and deliver fluid experiences across phones, tablets, and desktops.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>📱 Dynamic Layouts & Zero Overflow</h3>
+          <ul>
+            <li><strong>Auto-Wrapping Toolbars:</strong> Fixed <code>Row</code> widgets converted to <code>Wrap</code> and <code>LayoutBuilder</code>.</li>
+            <li><strong>Adaptive Header:</strong> Under 900px, top bar collapses into horizontal smooth-scroll with hamburger navigation drawer.</li>
+            <li><strong>Auto-Sizing Menu Grid:</strong> Replaced static column grids with <code>maxCrossAxisExtent: 320</code> for perfect scaling.</li>
+            <li><strong>Ellipsis Constraints:</strong> Text clipping prevents RenderFlex subpixel overflow on ultra-narrow viewports.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🔑 Security & Convenience Enhancements</h3>
+          <ul>
+            <li><strong>Password Hide/Unhide:</strong> Interactive eye icon for secure typing on both Customer and Merchant authentication forms.</li>
+            <li><strong>Dynamic Address Editor:</strong> Customers can add, update, and manage delivery addresses on the fly.</li>
+            <li><strong>Conflict-Free Port Binding:</strong> Web runner configured to port <strong>8085</strong> to prevent conflicts with Java/Tomcat (port 8080).</li>
+            <li><strong>Self-Healing DB Launcher:</strong> <code>run_app.bat</code> automatically verifies and starts MySQL service if stopped.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: Quick Start & Verification -->
+    <div class="slide" id="slide-8">
+      <span class="slide-tag">Deployment & Demo</span>
+      <h1 class="slide-title">How to Run & Verify the System</h1>
+      <p class="slide-subtitle">Follow these quick steps to launch the complete platform locally or on a peer machine.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>🚀 Quick Launch Steps</h3>
+          <ol style="margin-left: 20px; line-height: 1.8;">
+            <li><strong>Start MySQL:</strong> Run <code>start_mysql.bat</code> (or <code>net start MySQL80</code>).</li>
+            <li><strong>Run Platform:</strong> Double-click <code>run_app.bat</code> in project root.</li>
+            <li><strong>Open Web App:</strong> Visit <code>http://127.0.0.1:8085</code> in Edge/Chrome.</li>
+            <li><strong>Backend API:</strong> Actively running on <code>http://127.0.0.1:8081</code>.</li>
+          </ol>
+        </div>
+
+        <div class="card">
+          <h3>🧪 Ready-to-Test Accounts</h3>
+          <p><strong>Merchant Corporate Accounts:</strong></p>
+          <ul style="margin-top: 6px; margin-bottom: 12px;">
+            <li>Email: <code>angkor.heritage@gmail.com</code> • Pass: <code>123456</code></li>
+            <li>Email: <code>artisan.coffee@gmail.com</code> • Pass: <code>123456</code></li>
+          </ul>
+          <p><strong>Customer Accounts:</strong></p>
+          <ul style="margin-top: 6px;">
+            <li>Phone: <code>010 334 556</code> • Pass: <code>123456</code></li>
+            <li>Or click <strong>Register</strong> to create a new customer in seconds.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 25px;">
+        <span class="badge badge-success" style="font-size: 0.95rem; padding: 8px 18px;">✅ System Verified & Ready for Demo</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Control Bar -->
+  <footer>
+    <div class="hint-keys">
+      Use <kbd>←</kbd> and <kbd>→</kbd> arrow keys or buttons to navigate. Press <kbd>F</kbd> for fullscreen.
+    </div>
+
+    <div class="nav-btn-group">
+      <button class="btn btn-secondary" id="prevBtn" onclick="prevSlide()">◀ Previous</button>
+      <button class="btn" id="nextBtn" onclick="nextSlide()">Next ▶</button>
+      <button class="btn btn-secondary" onclick="toggleFullScreen()">⛶ Fullscreen</button>
+    </div>
+  </footer>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 8;
+
+    function showSlide(index) {
+      if (index < 1) index = 1;
+      if (index > totalSlides) index = totalSlides;
+
+      for (let i = 1; i <= totalSlides; i++) {
+        const slide = document.getElementById('slide-' + i);
+        if (slide) {
+          slide.classList.remove('active');
+        }
+      }
+
+      const activeSlide = document.getElementById('slide-' + index);
+      if (activeSlide) {
+        activeSlide.classList.add('active');
+      }
+
+      currentSlide = index;
+      document.getElementById('slideCounter').innerText = `Slide ${currentSlide} of ${totalSlides}`;
+      document.getElementById('prevBtn').disabled = (currentSlide === 1);
+      document.getElementById('nextBtn').innerText = (currentSlide === totalSlides) ? 'Finish 🏁' : 'Next ▶';
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        showSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        showSlide(currentSlide - 1);
+      }
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullScreen();
+      }
+    });
+
+    // Initialize
+    showSlide(1);
+  </script>
+</body>
+</html>

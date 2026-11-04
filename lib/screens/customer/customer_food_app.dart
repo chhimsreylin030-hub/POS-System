@@ -71,7 +71,8 @@ class CustomerFoodApp extends StatefulWidget {
 
 class _CustomerFoodAppState extends State<CustomerFoodApp> {
   final FoodDeliveryState state = FoodDeliveryState();
-  int _currentNavIndex = 0; // 0: Home, 1: Tracking, 2: Profile & Settings
+  int _currentNavIndex = 0; // 0: Home, 1: Cart, 2: Tracking, 3: Profile & Settings
+  FoodPaymentMethod _cartPaymentMethod = FoodPaymentMethod.payOnDelivery;
   String _selectedCategory = 'All';
   String _searchQuery = '';
   RestaurantMerchant? _viewingMerchant;
@@ -142,11 +143,20 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
   }
 
   // --------------------------------------------------------------------------
-  // Add Dish Dialog with Special Instructions
+  // Add Dish Dialog with Special Instructions & Enhanced Description
   // --------------------------------------------------------------------------
   void _openItemDetailModal(RestaurantMerchant merchant, FoodMenuItem item) {
     int qty = 1;
     final notesController = TextEditingController();
+    final List<String> quickCustomizations = [
+      'Less spicy',
+      'Extra sauce',
+      'No onions',
+      'Less sweet',
+      'No ice',
+      'Separate sauce',
+      'Utensils please',
+    ];
 
     showModalBottomSheet(
       context: context,
@@ -154,6 +164,10 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
+          final isSpicy = item.description.toLowerCase().contains('spic') ||
+              item.description.toLowerCase().contains('pepper') ||
+              item.description.toLowerCase().contains('chili');
+
           return Container(
             decoration: const BoxDecoration(
               color: Colors.white,
@@ -161,149 +175,368 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
             ),
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-              top: 16,
+              top: 14,
               left: 20,
               right: 20,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    item.imageUrl,
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      height: 180,
-                      color: AppColors.blushTint,
-                      child: const Icon(Icons.fastfood, size: 48, color: AppColors.richMagenta),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.88,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Dish Hero Banner Image
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Image.network(
+                            item.imageUrl,
+                            height: 190,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 190,
+                              decoration: BoxDecoration(
+                                color: AppColors.blushTint.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: const Icon(Icons.fastfood, size: 52, color: AppColors.richMagenta),
+                            ),
+                          ),
+                        ),
+                        if (item.category.isNotEmpty)
+                          Positioned(
+                            top: 12,
+                            left: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.72),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                item.category,
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.deepBerry.withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.timer_outlined, color: Colors.white, size: 12),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${merchant.deliveryTimeMin} min',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Title & Price Header
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  color: AppColors.deepBerry,
+                                  height: 1.25,
+                                ),
+                              ),
+                              if (item.khmerName.isNotEmpty) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  item.khmerName,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.richMagenta.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '\$${item.priceUSD.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.richMagenta,
+                              ),
+                            ),
+                            Text(
+                              '${state.usdToKhr(item.priceUSD).toStringAsFixed(0)} ៛',
+                              style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Enhanced Dish Description Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.canvasLight,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.9)),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            item.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.deepBerry),
+                          Row(
+                            children: [
+                              const Icon(Icons.restaurant_menu, size: 16, color: AppColors.richMagenta),
+                              const SizedBox(width: 6),
+                              const Expanded(
+                                child: Text(
+                                  'About This Dish & Ingredients',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: AppColors.deepBerry,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.richMagenta.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'Fresh to Order',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.richMagenta),
+                                ),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 8),
                           Text(
-                            item.khmerName,
-                            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            item.description.isNotEmpty
+                                ? item.description
+                                : 'Handcrafted fresh to order with traditional Cambodian flavors, authentic ingredients, and house special recipe.',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF374151),
+                              height: 1.48,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _buildModalBadge(Icons.check_circle_outline, 'Authentic Recipe', AppColors.success),
+                              if (isSpicy)
+                                _buildModalBadge(Icons.local_fire_department, 'Spicy & Savory', Colors.deepOrange)
+                              else
+                                _buildModalBadge(Icons.eco_outlined, 'Carefully Seasoned', AppColors.richMagenta),
+                              _buildModalBadge(Icons.storefront_outlined, merchant.name, AppColors.deepBerry),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    const SizedBox(height: 16),
+
+                    // Quick Request Suggestions
+                    const Text(
+                      'Special Requests (Optional)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.deepBerry),
+                    ),
+                    const SizedBox(height: 6),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: quickCustomizations.map((opt) {
+                          final isSelected = notesController.text.contains(opt);
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: FilterChip(
+                              label: Text(opt),
+                              selected: isSelected,
+                              selectedColor: AppColors.blushTint,
+                              checkmarkColor: AppColors.richMagenta,
+                              backgroundColor: Colors.white,
+                              labelStyle: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected ? AppColors.richMagenta : AppColors.deepBerry,
+                              ),
+                              side: BorderSide(
+                                color: isSelected ? AppColors.richMagenta : AppColors.borderLight,
+                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              onSelected: (_) {
+                                setModalState(() {
+                                  if (isSelected) {
+                                    notesController.text = notesController.text
+                                        .replaceFirst(', $opt', '')
+                                        .replaceFirst('$opt, ', '')
+                                        .replaceFirst(opt, '')
+                                        .trim();
+                                  } else {
+                                    if (notesController.text.trim().isEmpty) {
+                                      notesController.text = opt;
+                                    } else {
+                                      notesController.text = '${notesController.text.trim()}, $opt';
+                                    }
+                                  }
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Instructions textfield
+                    TextField(
+                      controller: notesController,
+                      decoration: InputDecoration(
+                        hintText: 'Add kitchen instructions (e.g. less sauce, no ice, extra lime)...',
+                        hintStyle: const TextStyle(fontSize: 12),
+                        prefixIcon: const Icon(Icons.edit_note, size: 20, color: AppColors.richMagenta),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.borderLight)),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Quantity & Add to Bag Bar
+                    Row(
                       children: [
-                        Text(
-                          '\$${item.priceUSD.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.richMagenta),
+                        // Quantity counter
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.blushTint.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.softPink.withValues(alpha: 0.7)),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove, size: 18, color: AppColors.deepBerry),
+                                onPressed: qty > 1 ? () => setModalState(() => qty--) : null,
+                              ),
+                              Text('$qty', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.deepBerry)),
+                              IconButton(
+                                icon: const Icon(Icons.add, size: 18, color: AppColors.deepBerry),
+                                onPressed: () => setModalState(() => qty++),
+                              ),
+                            ],
+                          ),
                         ),
-                        Text(
-                          '${state.usdToKhr(item.priceUSD).toStringAsFixed(0)} ៛',
-                          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                        const SizedBox(width: 14),
+
+                        // Add button
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.richMagenta,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.shopping_bag_outlined, size: 19),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Add to Bag • \$${(item.priceUSD * qty).toStringAsFixed(2)} (${state.usdToKhr(item.priceUSD * qty).toStringAsFixed(0)} ៛)',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ),
+                            onPressed: () {
+                              for (int i = 0; i < qty; i++) {
+                                state.addToCart(merchant, item, notes: notesController.text.trim());
+                              }
+                              Navigator.of(ctx).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Added $qty x ${item.name} to bag'),
+                                  backgroundColor: AppColors.richMagenta,
+                                  duration: const Duration(milliseconds: 900),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  item.description,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.4),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: notesController,
-                  decoration: InputDecoration(
-                    hintText: 'Special instructions (e.g. Less spicy, extra sauce, no ice)',
-                    hintStyle: const TextStyle(fontSize: 12),
-                    prefixIcon: const Icon(Icons.note_add_outlined, size: 18, color: AppColors.richMagenta),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    // Quantity counter
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.blushTint.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.softPink.withValues(alpha: 0.5)),
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove, size: 18, color: AppColors.deepBerry),
-                            onPressed: qty > 1 ? () => setModalState(() => qty--) : null,
-                          ),
-                          Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          IconButton(
-                            icon: const Icon(Icons.add, size: 18, color: AppColors.deepBerry),
-                            onPressed: () => setModalState(() => qty++),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    // Add button
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.richMagenta,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        icon: const Icon(Icons.shopping_bag_outlined, size: 18),
-                        label: Text(
-                          'Add to Bag • \$${(item.priceUSD * qty).toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        onPressed: () {
-                          for (int i = 0; i < qty; i++) {
-                            state.addToCart(merchant, item, notes: notesController.text);
-                          }
-                          Navigator.of(ctx).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Added $qty x ${item.name} to food bag'),
-                              backgroundColor: AppColors.richMagenta,
-                              duration: const Duration(milliseconds: 900),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildModalBadge(IconData icon, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(text, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: color)),
+        ],
       ),
     );
   }
@@ -312,9 +545,15 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
   // Cart & Simple Payment Modal (Pay on Delivery or Paid)
   // --------------------------------------------------------------------------
   void _openCartModal() {
-    if (state.cartItems.isEmpty) return;
+    if (state.cartItems.isEmpty) {
+      setState(() {
+        _currentNavIndex = 1;
+        _viewingMerchant = null;
+      });
+      return;
+    }
 
-    FoodPaymentMethod selectedPayment = FoodPaymentMethod.payOnDelivery;
+    FoodPaymentMethod selectedPayment = _cartPaymentMethod;
 
     showModalBottomSheet(
       context: context,
@@ -513,14 +752,20 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                               label: 'Pay by Delivery (COD)',
                               icon: Icons.payments_outlined,
                               selected: selectedPayment == FoodPaymentMethod.payOnDelivery,
-                              onTap: () => setCartState(() => selectedPayment = FoodPaymentMethod.payOnDelivery),
+                              onTap: () => setCartState(() {
+                                selectedPayment = FoodPaymentMethod.payOnDelivery;
+                                _cartPaymentMethod = FoodPaymentMethod.payOnDelivery;
+                              }),
                             ),
                             const SizedBox(width: 10),
                             _buildPaymentOption(
                               label: 'Paid (Card / Online)',
                               icon: Icons.credit_card,
                               selected: selectedPayment == FoodPaymentMethod.paid,
-                              onTap: () => setCartState(() => selectedPayment = FoodPaymentMethod.paid),
+                              onTap: () => setCartState(() {
+                                selectedPayment = FoodPaymentMethod.paid;
+                                _cartPaymentMethod = FoodPaymentMethod.paid;
+                              }),
                             ),
                           ],
                         ),
@@ -578,7 +823,7 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                               final order = state.placeOrder(paymentMethod: selectedPayment);
                               Navigator.of(ctx).pop();
                               setState(() {
-                                _currentNavIndex = 1; // Auto-navigate to Tracking tab!
+                                _currentNavIndex = 2; // Auto-navigate to Tracking tab!
                               });
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -1357,11 +1602,40 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
               ),
             ),
 
-            // Top Header: Delivery Location, Live DB Pill & Avatar
+            // Top Header: App Logo, Delivery Location, Live DB Pill & Avatar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Row(
                 children: [
+                  // App Brand Logo Emblem
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _currentNavIndex = 0;
+                        _viewingMerchant = null;
+                      });
+                    },
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.softPink, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(color: AppColors.richMagenta.withValues(alpha: 0.2), blurRadius: 4),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/app_logo.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ),
                   Expanded(
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
@@ -1371,9 +1645,16 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Row(
-                              children: [
-                                Text('DELIVER TO', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.richMagenta, letterSpacing: 0.8)),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Flexible(
+                                  child: Text(
+                                    'DELIVER TO',
+                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.richMagenta, letterSpacing: 0.8),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                                 SizedBox(width: 3),
                                 Icon(Icons.edit_location_alt, size: 12, color: AppColors.richMagenta),
                                 Icon(Icons.keyboard_arrow_down, size: 14, color: AppColors.richMagenta),
@@ -1439,9 +1720,63 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                       ),
                     ),
                   ),
+                  // Cart Quick Icon in Top Nav
+                  InkWell(
+                    onTap: () => setState(() {
+                      _currentNavIndex = 1;
+                      _viewingMerchant = null;
+                    }),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: _currentNavIndex == 1
+                            ? AppColors.richMagenta
+                            : AppColors.blushTint.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _currentNavIndex == 1
+                              ? AppColors.richMagenta
+                              : AppColors.softPink.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 16,
+                            color: _currentNavIndex == 1 ? Colors.white : AppColors.deepBerry,
+                          ),
+                          if (state.cartTotalQuantity > 0)
+                            Positioned(
+                              top: -7,
+                              right: -8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: _currentNavIndex == 1 ? Colors.white : AppColors.richMagenta,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: _currentNavIndex == 1 ? Border.all(color: AppColors.richMagenta, width: 1) : null,
+                                ),
+                                child: Text(
+                                  '${state.cartTotalQuantity}',
+                                  style: TextStyle(
+                                    color: _currentNavIndex == 1 ? AppColors.richMagenta : Colors.white,
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                   if (state.isCustomerLoggedIn)
                     InkWell(
-                      onTap: () => setState(() => _currentNavIndex = 2),
+                      onTap: () => setState(() => _currentNavIndex = 3),
                       child: CircleAvatar(
                         radius: 17,
                         backgroundColor: AppColors.deepBerry,
@@ -1482,8 +1817,8 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
               child: _buildCurrentNavTab(),
             ),
 
-            // Floating Cart Bottom Bar (if items in cart)
-            if (state.cartItems.isNotEmpty)
+            // Floating Cart Bottom Bar (if items in cart and not already on Cart Tab)
+            if (state.cartItems.isNotEmpty && _currentNavIndex != 1)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
@@ -1501,7 +1836,7 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '${state.cartItems.fold(0, (sum, i) => sum + i.quantity)} items in Bag',
+                          '${state.cartTotalQuantity} items in Bag',
                           style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                         ),
                         Text(
@@ -1519,14 +1854,17 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                       ),
                       icon: const Icon(Icons.shopping_bag, size: 16),
                       label: const Text('View Bag & Pay', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                      onPressed: _openCartModal,
+                      onPressed: () => setState(() {
+                        _currentNavIndex = 1;
+                        _viewingMerchant = null;
+                      }),
                     ),
                   ],
                 ),
               ),
 
             // ----------------------------------------------------------------
-            // GENERAL APP BOTTOM NAVIGATION BAR: Home • Tracking • Profile
+            // GENERAL APP BOTTOM NAVIGATION BAR: Home • Cart • Tracking • Profile
             // ----------------------------------------------------------------
             Container(
               decoration: const BoxDecoration(
@@ -1555,6 +1893,53 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                     icon: Icon(Icons.home_outlined),
                     activeIcon: Icon(Icons.home),
                     label: 'Home',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.shopping_bag_outlined),
+                        if (state.cartTotalQuantity > 0)
+                          Positioned(
+                            top: -2,
+                            right: -8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: const BoxDecoration(
+                                color: AppColors.richMagenta,
+                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                              ),
+                              child: Text(
+                                '${state.cartTotalQuantity}',
+                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    activeIcon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.shopping_bag),
+                        if (state.cartTotalQuantity > 0)
+                          Positioned(
+                            top: -2,
+                            right: -8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: const BoxDecoration(
+                                color: AppColors.richMagenta,
+                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                              ),
+                              child: Text(
+                                '${state.cartTotalQuantity}',
+                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    label: 'Cart',
                   ),
                   BottomNavigationBarItem(
                     icon: Stack(
@@ -1612,7 +1997,7 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
   }
 
   // --------------------------------------------------------------------------
-  // Router between Home, Tracking, and Profile Tabs
+  // Router between Home, Cart, Tracking, and Profile Tabs
   // --------------------------------------------------------------------------
   Widget _buildCurrentNavTab() {
     switch (_currentNavIndex) {
@@ -1624,9 +2009,12 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
         }
 
       case 1:
-        return _buildTrackingTab();
+        return _buildCartTab();
 
       case 2:
+        return _buildTrackingTab();
+
+      case 3:
         return state.isCustomerLoggedIn
             ? _buildProfileSettingsTab()
             : _buildAuthTab();
@@ -1679,7 +2067,7 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
         // Live Quick Alert if Order is Active
         if (state.activeTrackingOrder != null && state.activeTrackingOrder!.status != FoodOrderStatus.delivered) ...[
           InkWell(
-            onTap: () => setState(() => _currentNavIndex = 1),
+            onTap: () => setState(() => _currentNavIndex = 2),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -1978,12 +2366,19 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                             ),
                           ],
                         ),
-                        Text(merchant.khmerName, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                        Text(merchant.khmerName, style: const TextStyle(fontSize: 11, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            Text(merchant.cuisine, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-                            const Spacer(),
+                            Expanded(
+                              child: Text(
+                                merchant.cuisine,
+                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             Text('Delivery: \$${merchant.deliveryFeeUSD.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.richMagenta)),
                           ],
                         ),
@@ -2000,7 +2395,498 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
   }
 
   // --------------------------------------------------------------------------
-  // TAB 1: TRACKING VIEW (Streamlined: Placed -> Delivering -> Delivered)
+  // TAB 1: CART VIEW (Full Dedicated Screen & Fast Checkout)
+  // --------------------------------------------------------------------------
+  Widget _buildCartTab() {
+    if (state.cartItems.isEmpty) {
+      return _buildEmptyCartView();
+    }
+    return _buildActiveCartView();
+  }
+
+  Widget _buildEmptyCartView() {
+    final popularRestaurants = state.merchants.take(3).toList();
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      children: [
+        const Text(
+          'My Shopping Bag',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.deepBerry),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.borderLight),
+            boxShadow: [
+              BoxShadow(color: AppColors.deepBerry.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3)),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 88,
+                height: 88,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.softPink, width: 2),
+                  boxShadow: [
+                    BoxShadow(color: AppColors.richMagenta.withValues(alpha: 0.15), blurRadius: 10),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/app_logo.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Your Bag is Empty',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.deepBerry),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'You haven\'t added any food yet.\nExplore our 21 partner restaurants across Phnom Penh to get started!',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.richMagenta,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.restaurant_menu, size: 18),
+                label: const Text('Explore Restaurants', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                onPressed: () {
+                  setState(() {
+                    _currentNavIndex = 0;
+                    _viewingMerchant = null;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Popular Dining Destinations',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.deepBerry),
+        ),
+        const SizedBox(height: 10),
+        ...popularRestaurants.map((m) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  m.logoUrl.isNotEmpty ? m.logoUrl : m.bannerUrl,
+                  width: 52,
+                  height: 52,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 52,
+                    height: 52,
+                    color: AppColors.blushTint,
+                    child: const Icon(Icons.restaurant, color: AppColors.richMagenta),
+                  ),
+                ),
+              ),
+              title: Text(
+                m.name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.deepBerry),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                '⭐ ${m.rating} • ${m.deliveryTimeMin} min • \$${m.deliveryFeeUSD.toStringAsFixed(2)} delivery',
+                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              ),
+              trailing: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.deepBerry,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _viewingMerchant = m;
+                    _currentNavIndex = 0;
+                  });
+                },
+                child: const Text('Order', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildActiveCartView() {
+    final totalUSD = state.cartTotalUSD;
+    final totalKHR = state.cartTotalKHR;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('My Food Cart', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.deepBerry)),
+                Text('Ordering from ${state.cartMerchant?.name ?? "Restaurant"}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              ],
+            ),
+            TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+              icon: const Icon(Icons.delete_outline, size: 16),
+              label: const Text('Clear Bag', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (dlgCtx) => AlertDialog(
+                    title: const Text('Clear Cart?'),
+                    content: const Text('Are you sure you want to remove all dishes from your bag?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(dlgCtx), child: const Text('Cancel')),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+                        onPressed: () {
+                          Navigator.pop(dlgCtx);
+                          setState(() => state.clearCart());
+                        },
+                        child: const Text('Clear All'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Delivery Address Card (Clickable to Edit / Change Destination)
+        InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {
+            _openAddressManagerSheet();
+          },
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.blushTint.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.softPink.withValues(alpha: 0.6)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on, color: AppColors.richMagenta, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Text('Delivery Destination', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.textMuted)),
+                          SizedBox(width: 4),
+                          Icon(Icons.edit, size: 11, color: AppColors.richMagenta),
+                        ],
+                      ),
+                      Text(state.deliveryAddress, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.deepBerry)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.richMagenta.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('Change', style: TextStyle(color: AppColors.richMagenta, fontWeight: FontWeight.bold, fontSize: 11)),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Food Items List Card
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Dishes in Bag (${state.cartTotalQuantity})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.deepBerry)),
+                  if (state.cartMerchant != null)
+                    Text('Est. ${state.cartMerchant!.deliveryTimeMin} mins', style: const TextStyle(fontSize: 11, color: AppColors.richMagenta, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const Divider(height: 18),
+              ...state.cartItems.map((item) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          item.menuItem.imageUrl,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(width: 48, height: 48, color: AppColors.blushTint),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.menuItem.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.deepBerry)),
+                            if (item.specialNotes.isNotEmpty)
+                              Text('Note: ${item.specialNotes}', style: const TextStyle(fontSize: 10, color: AppColors.richMagenta, fontStyle: FontStyle.italic)),
+                            Text('\$${item.menuItem.priceUSD.toStringAsFixed(2)} each', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, size: 20, color: AppColors.deepBerry),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                            onPressed: () => setState(() => state.updateCartQuantity(item.menuItem.id, item.quantity - 1)),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline, size: 20, color: AppColors.richMagenta),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                            onPressed: () => setState(() => state.updateCartQuantity(item.menuItem.id, item.quantity + 1)),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        width: 58,
+                        child: Text(
+                          '\$${item.totalUSD.toStringAsFixed(2)}',
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.deepBerry),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Voucher Input Card
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _voucherController,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    hintText: 'Promo Voucher (WELCOME5, FREESHIP)',
+                    hintStyle: const TextStyle(fontSize: 11),
+                    prefixIcon: const Icon(Icons.local_offer_outlined, size: 18, color: AppColors.richMagenta),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.deepBerry,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+                onPressed: () {
+                  final applied = state.applyVoucher(_voucherController.text);
+                  setState(() {});
+                  if (applied) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('✓ Promo ${state.appliedVoucher!.code} applied! (${state.appliedVoucher!.discountPercent}% OFF)')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Invalid code. Try WELCOME5 or FREESHIP')),
+                    );
+                  }
+                },
+                child: const Text('Apply', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Payment Method Card
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Payment Method', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.deepBerry)),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _buildPaymentOption(
+                    label: 'Pay on Delivery (COD)',
+                    icon: Icons.payments_outlined,
+                    selected: _cartPaymentMethod == FoodPaymentMethod.payOnDelivery,
+                    onTap: () => setState(() => _cartPaymentMethod = FoodPaymentMethod.payOnDelivery),
+                  ),
+                  const SizedBox(width: 10),
+                  _buildPaymentOption(
+                    label: 'Paid (Card / Online)',
+                    icon: Icons.credit_card,
+                    selected: _cartPaymentMethod == FoodPaymentMethod.paid,
+                    onTap: () => setState(() => _cartPaymentMethod = FoodPaymentMethod.paid),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Price Breakdown Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Column(
+            children: [
+              _buildSummaryRow('Food Subtotal', '\$${state.cartSubtotalUSD.toStringAsFixed(2)}'),
+              _buildSummaryRow('Delivery Fee', '\$${state.cartDeliveryFeeUSD.toStringAsFixed(2)}'),
+              if (state.cartDiscountUSD > 0)
+                _buildSummaryRow('Discount Voucher', '-\$${state.cartDiscountUSD.toStringAsFixed(2)}', color: AppColors.success),
+              const Divider(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Grand Total Payable:', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.deepBerry)),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('\$${totalUSD.toStringAsFixed(2)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.richMagenta)),
+                      Text('${totalKHR.toStringAsFixed(0)} ៛', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Place Order Action Button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.richMagenta,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 2,
+            ),
+            icon: const Icon(Icons.check_circle_outline),
+            label: Text(
+              _cartPaymentMethod == FoodPaymentMethod.paid
+                  ? 'Confirm Order • Paid (\$${totalUSD.toStringAsFixed(2)})'
+                  : 'Place Order • Pay on Delivery (\$${totalUSD.toStringAsFixed(2)})',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            onPressed: () {
+              if (!state.isCustomerLoggedIn) {
+                _openAuthModal(initialIsRegister: false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please log in or register to place your food order.'),
+                    backgroundColor: AppColors.richMagenta,
+                  ),
+                );
+                return;
+              }
+              final order = state.placeOrder(paymentMethod: _cartPaymentMethod);
+              setState(() {
+                _currentNavIndex = 2; // Auto-navigate to Tracking tab!
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('✓ Order #${order.orderNumber} placed! Track your live delivery below.'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // TAB 2: TRACKING VIEW (Streamlined: Placed -> Delivering -> Delivered)
   // --------------------------------------------------------------------------
   Widget _buildTrackingTab() {
     return ListView(
@@ -3167,6 +4053,48 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () => setState(() {
+                  _currentNavIndex = 1;
+                  _viewingMerchant = null;
+                }),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.blushTint.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.softPink.withValues(alpha: 0.6)),
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(Icons.shopping_bag_outlined, size: 18, color: AppColors.richMagenta),
+                      if (state.cartTotalQuantity > 0)
+                        Positioned(
+                          top: -7,
+                          right: -8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: const BoxDecoration(
+                              color: AppColors.richMagenta,
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                            ),
+                            child: Text(
+                              '${state.cartTotalQuantity}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -3266,64 +4194,283 @@ class _CustomerFoodAppState extends State<CustomerFoodApp> {
                   itemCount: items.length,
                   itemBuilder: (ctx, idx) {
                     final item = items[idx];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        side: const BorderSide(color: AppColors.borderLight),
+                    final inCartItem = state.cartItems.cast<FoodCartItem?>().firstWhere(
+                      (c) => c?.menuItem.id == item.id,
+                      orElse: () => null,
+                    );
+                    final inCartQty = inCartItem?.quantity ?? 0;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: inCartQty > 0
+                              ? AppColors.richMagenta.withValues(alpha: 0.4)
+                              : AppColors.borderLight.withValues(alpha: 0.9),
+                          width: inCartQty > 0 ? 1.5 : 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.deepBerry.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                      child: InkWell(
-                        onTap: item.isAvailable ? () => _openItemDetailModal(merchant, item) : null,
-                        borderRadius: BorderRadius.circular(14),
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.network(
-                                  item.imageUrl,
-                                  width: 76,
-                                  height: 76,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(width: 76, height: 76, color: AppColors.blushTint),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: item.isAvailable ? () => _openItemDetailModal(merchant, item) : null,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Dish Image & Badges
+                                Stack(
                                   children: [
-                                    Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.deepBerry), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                    Text(item.khmerName, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                                    const SizedBox(height: 4),
-                                    Text(item.description, style: TextStyle(fontSize: 10, color: Colors.grey.shade600), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('\$${item.priceUSD.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.richMagenta)),
-                                        if (item.isAvailable)
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(color: AppColors.richMagenta, borderRadius: BorderRadius.circular(8)),
-                                            child: const Row(
-                                              children: [
-                                                Icon(Icons.add, size: 12, color: Colors.white),
-                                                SizedBox(width: 2),
-                                                Text('Add', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                              ],
-                                            ),
-                                          )
-                                        else
-                                          const Text('Sold Out', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
-                                      ],
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: Image.network(
+                                        item.imageUrl,
+                                        width: 92,
+                                        height: 92,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          width: 92,
+                                          height: 92,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.blushTint.withValues(alpha: 0.5),
+                                            borderRadius: BorderRadius.circular(14),
+                                          ),
+                                          child: const Icon(Icons.fastfood, size: 36, color: AppColors.richMagenta),
+                                        ),
+                                      ),
                                     ),
+                                    if (!item.isAvailable)
+                                      Container(
+                                        width: 92,
+                                        height: 92,
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.55),
+                                          borderRadius: BorderRadius.circular(14),
+                                        ),
+                                        child: Center(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black87,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: const Text(
+                                              'Sold Out',
+                                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    else if (inCartQty > 0)
+                                      Positioned(
+                                        top: 6,
+                                        left: 6,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.richMagenta,
+                                            borderRadius: BorderRadius.circular(6),
+                                            boxShadow: const [
+                                              BoxShadow(color: Colors.black26, blurRadius: 4),
+                                            ],
+                                          ),
+                                          child: Text(
+                                            '$inCartQty in bag',
+                                            style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 14),
+
+                                // Dish Details & Enhanced Description
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: AppColors.deepBerry,
+                                          height: 1.25,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Row(
+                                        children: [
+                                          if (item.khmerName.isNotEmpty)
+                                            Flexible(
+                                              child: Text(
+                                                item.khmerName,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: AppColors.richMagenta.withValues(alpha: 0.9),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          if (item.khmerName.isNotEmpty && item.category.isNotEmpty)
+                                            const SizedBox(width: 6),
+                                          if (item.category.isNotEmpty)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.blushTint.withValues(alpha: 0.5),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                item.category,
+                                                style: const TextStyle(
+                                                  fontSize: 9.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppColors.richMagenta,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        item.description.isNotEmpty
+                                            ? item.description
+                                            : 'Carefully prepared fresh to order with traditional flavors and seasonings.',
+                                        style: const TextStyle(
+                                          fontSize: 11.5,
+                                          color: Color(0xFF4B5563),
+                                          height: 1.38,
+                                        ),
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          Expanded(
+                                            child: Wrap(
+                                              crossAxisAlignment: WrapCrossAlignment.center,
+                                              spacing: 4,
+                                              children: [
+                                                Text(
+                                                  '\$${item.priceUSD.toStringAsFixed(2)}',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 14.5,
+                                                    color: AppColors.richMagenta,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '• ${state.usdToKhr(item.priceUSD).toStringAsFixed(0)} ៛',
+                                                  style: const TextStyle(
+                                                    fontSize: 10.5,
+                                                    color: AppColors.textMuted,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (!item.isAvailable)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade200,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Text(
+                                                'Sold Out',
+                                                style: TextStyle(color: Colors.grey, fontSize: 10.5, fontWeight: FontWeight.bold),
+                                              ),
+                                            )
+                                          else if (inCartQty > 0)
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                color: AppColors.blushTint.withValues(alpha: 0.45),
+                                                borderRadius: BorderRadius.circular(10),
+                                                border: Border.all(color: AppColors.softPink),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  InkWell(
+                                                    onTap: () => state.updateCartQuantity(item.id, inCartQty - 1),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    child: const Padding(
+                                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                                      child: Icon(Icons.remove, size: 14, color: AppColors.richMagenta),
+                                                    ),
+                                                  ),
+                                                  Padding(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                    child: Text(
+                                                      '$inCartQty',
+                                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.deepBerry),
+                                                    ),
+                                                  ),
+                                                  InkWell(
+                                                    onTap: () => state.updateCartQuantity(item.id, inCartQty + 1),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    child: const Padding(
+                                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                                      child: Icon(Icons.add, size: 14, color: AppColors.richMagenta),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          else
+                                            Material(
+                                              color: AppColors.richMagenta,
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: InkWell(
+                                                onTap: () => _openItemDetailModal(merchant, item),
+                                                borderRadius: BorderRadius.circular(10),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(Icons.add, size: 13, color: Colors.white),
+                                                      SizedBox(width: 3),
+                                                      Text(
+                                                        'Add',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

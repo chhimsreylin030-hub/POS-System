@@ -123,15 +123,23 @@ class _AdminWebPortalState extends State<AdminWebPortal> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 44,
+                height: 44,
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: AppColors.richMagenta,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(color: AppColors.vibrantPink.withValues(alpha: 0.3), blurRadius: 8),
                   ],
                 ),
-                child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 24),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(9),
+                  child: Image.asset(
+                    'assets/images/app_logo.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               const Column(

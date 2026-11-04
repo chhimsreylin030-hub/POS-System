@@ -530,6 +530,9 @@ class FoodDeliveryState extends ChangeNotifier {
   // --------------------------------------------------------------------------
   // Cart Calculations
   // --------------------------------------------------------------------------
+  int get cartTotalQuantity =>
+      cartItems.fold(0, (sum, i) => sum + i.quantity);
+
   double get cartSubtotalUSD =>
       cartItems.fold(0.0, (sum, i) => sum + i.totalUSD);
 

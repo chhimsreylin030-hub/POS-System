@@ -128,9 +128,20 @@ class _DriverDeliveryScreenState extends State<DriverDeliveryScreen> {
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(color: AppColors.richMagenta, borderRadius: BorderRadius.circular(10)),
-              child: const Icon(Icons.two_wheeler, color: Colors.white, size: 20),
+              width: 36,
+              height: 36,
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.softPink, width: 1.5),
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/app_logo.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(

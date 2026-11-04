@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartFood Multi-Tenant Platform — System Architecture & Presentation</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 18mm 16mm 18mm 16mm;
+    }
+    :root {
+      --deep-berry: #59123E;
+      --rich-magenta: #8C0057;
+      --vibrant-pink: #F261BB;
+      --soft-pink: #FF99D8;
+      --blush-tint: #FFCCEB;
+      --text-dark: #222222;
+      --text-muted: #555555;
+    }
+    body {
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+      color: var(--text-dark);
+      line-height: 1.55;
+      font-size: 11pt;
+      margin: 0;
+      padding: 24px;
+      background-color: #ffffff;
+    }
+    .header-box {
+      border-bottom: 3px solid var(--rich-magenta);
+      padding-bottom: 14px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .title {
+      font-size: 22pt;
+      font-weight: 800;
+      color: var(--deep-berry);
+      margin: 0 0 4px 0;
+    }
+    .subtitle {
+      font-size: 12pt;
+      color: var(--rich-magenta);
+      font-weight: 600;
+      margin: 0;
+    }
+    .meta-tag {
+      font-size: 9pt;
+      color: #777;
+      text-align: right;
+    }
+    h2 {
+      color: var(--deep-berry);
+      border-left: 5px solid var(--rich-magenta);
+      padding-left: 10px;
+      font-size: 14pt;
+      margin-top: 26px;
+      margin-bottom: 12px;
+      page-break-after: avoid;
+    }
+    h3 {
+      color: var(--rich-magenta);
+      font-size: 11.5pt;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      page-break-after: avoid;
+    }
+    p {
+      margin: 0 0 10px 0;
+      color: #333333;
+    }
+    ul, ol {
+      margin: 0 0 12px 20px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 8.5pt;
+      font-weight: bold;
+      border-radius: 4px;
+      background: var(--rich-magenta);
+      color: #ffffff;
+    }
+    .badge-sub {
+      background: #eef2f7;
+      color: var(--deep-berry);
+      border: 1px solid #ccd5e0;
+    }
+    .callout {
+      background-color: #fcf4f8;
+      border: 1px solid var(--soft-pink);
+      border-left: 4px solid var(--rich-magenta);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 14px 0;
+      page-break-inside: avoid;
+    }
+    .callout-title {
+      font-weight: bold;
+      color: var(--deep-berry);
+      margin-bottom: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 18px 0;
+      font-size: 9.5pt;
+      page-break-inside: auto;
+    }
+    tr {
+      page-break-inside: avoid;
+      page-break-after: auto;
+    }
+    th {
+      background-color: var(--deep-berry);
+      color: #ffffff;
+      font-weight: bold;
+      text-align: left;
+      padding: 8px 10px;
+      border: 1px solid var(--deep-berry);
+    }
+    td {
+      padding: 8px 10px;
+      border: 1px solid #dddddd;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td {
+      background-color: #faf5f8;
+    }
+    .grid-3 {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .grid-col {
+      flex: 1;
+      border: 1px solid #e2d2dc;
+      background: #faf6f8;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .flow-step {
+      display: flex;
+      margin-bottom: 8px;
+      align-items: flex-start;
+      page-break-inside: avoid;
+    }
+    .step-num {
+      width: 24px;
+      height: 24px;
+      background: var(--rich-magenta);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 9pt;
+      margin-right: 10px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-body {
+      flex: 1;
+    }
+    .step-body strong {
+      color: var(--deep-berry);
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9pt;
+      background: #f3f3f3;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: #9c005a;
+    }
+    .footer {
+      margin-top: 30px;
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+      font-size: 8.5pt;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-box">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <img src="assets/images/app_logo.png" alt="Logo" style="width: 58px; height: 58px; object-fit: contain; border-radius: 14px; border: 1.5px solid var(--soft-pink); padding: 3px;">
+      <div>
+        <h1 class="title">SmartFood Delivery & POS Platform</h1>
+        <div class="subtitle">Multi-Tenant System Architecture, Database Design & Process Flow</div>
+      </div>
+    </div>
+    <div class="meta-tag">
+      <strong>Environment:</strong> pos_db (MySQL 8.0)<br>
+      <strong>Date:</strong> October 2026 • Production Architecture
+    </div>
+  </div>
+
+  <h2>1. Executive Summary & Core Platform Components</h2>
+  <p>
+    The <strong>SmartFood Platform</strong> is an enterprise multi-tenant food delivery and merchant point-of-sale ecosystem.
+    It supports simultaneous operations across four user roles: Customers, Merchants, Drivers, and Platform Administrators,
+    backed by an ACID-compliant MySQL database.
+  </p>
+
+  <div class="grid-3">
+    <div class="grid-col">
+      <h3 style="margin-top: 0;">📱 Customer Mobile App</h3>
+      <p style="font-size: 9pt;">Features restaurant discovery, coupon system, interactive address editor, password eye toggle, and real-time order status tracking.</p>
+    </div>
+    <div class="grid-col">
+      <h3 style="margin-top: 0;">💻 Merchant Web Portal</h3>
+      <p style="font-size: 9pt;">Isolated merchant controller for 10 corporate restaurant groups. Includes instant kitchen audio/visual alert banner, ticket workflow, and dish CRUD.</p>
+    </div>
+    <div class="grid-col">
+      <h3 style="margin-top: 0;">🛡️ Corporate Admin & Driver</h3>
+      <p style="font-size: 9pt;">High-level platform oversight, store revenue analytics, customer CRM, driver dispatch, and audit trails.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">Brand Identity & Adobe Color System</div>
+    Platform user interfaces strictly utilize the designated brand palette:
+    <strong>Deep Berry</strong> (<code>#59123E</code>), 
+    <strong>Rich Magenta</strong> (<code>#8C0057</code>), 
+    <strong>Vibrant Pink</strong> (<code>#F261BB</code>), 
+    <strong>Soft Pink</strong> (<code>#FF99D8</code>), and 
+    <strong>Blush Tint</strong> (<code>#FFCCEB</code>).
+  </div>
+
+  <h2>2. 3-Tier Distributed Architecture</h2>
+  <p>The platform separates presentation, API orchestration, and persistence into three decoupled tiers:</p>
+  <ul>
+    <li><strong>Client Tier (Flutter Multi-Platform):</strong> Serves Web, Desktop, and Mobile. Responsive design dynamically adapts from small smartphone screens (360px) to ultra-wide displays without RenderFlex overflows. Hosted on local port <code>8085</code>.</li>
+    <li><strong>Service API Tier (Dart REST Server • Port 8081):</strong> <code>bin/server.dart</code> handles JSON endpoints, multi-store transactions, dynamic host resolution, and automatic connection retries.</li>
+    <li><strong>Database Tier (MySQL 8.0 • Port 3306):</strong> Dedicated strictly to <code>pos_db</code>. All production data and constraints reside here while external databases remain completely untouched.</li>
+  </ul>
+
+  <h2>3. Multi-Tenant Merchant Corporate Account Hierarchy</h2>
+  <p>
+    The platform strictly enforces <strong>Tenant Boundary Isolation</strong>. There are 10 corporate partner accounts,
+    each owning multiple restaurant outlets. A merchant authenticated under Account #1 can never access, edit, or view
+    restaurants or financial records belonging to Accounts #2 through #10.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 8%;">ID</th>
+        <th style="width: 27%;">Corporate Account</th>
+        <th style="width: 25%;">Corporate Email</th>
+        <th style="width: 14%;">Reg Number</th>
+        <th style="width: 26%;">Assigned Restaurants</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>#1</strong></td>
+        <td><strong>Angkor Food & Heritage Group</strong></td>
+        <td><code>angkor.heritage@gmail.com</code></td>
+        <td><span class="badge badge-sub">AF-2026-001</span></td>
+        <td>1. Angkor Authentic Kitchen (#1)<br>2. Khmer Heritage Curry (#2)<br>3. Siem Reap Bistro (#3)</td>
+      </tr>
+      <tr>
+        <td><strong>#2</strong></td>
+        <td><strong>Brown & Artisan Coffee Ventures</strong></td>
+        <td><code>artisan.coffee@gmail.com</code></td>
+        <td><span class="badge badge-sub">BC-2026-002</span></td>
+        <td>4. Brown Artisan Roastery BKK1 (#4)<br>5. Phnom Penh Specialty Cafe (#5)</td>
+      </tr>
+      <tr>
+        <td><strong>#3</strong></td>
+        <td><strong>Smash & Patty Burger Labs</strong></td>
+        <td><code>smash.burger@gmail.com</code></td>
+        <td><span class="badge badge-sub">SB-2026-003</span></td>
+        <td>6. Smash & Patty Burger BKK1 (#6)<br>7. Royal Patty Burger Toul Kork (#7)</td>
+      </tr>
+      <tr>
+        <td><strong>#4</strong></td>
+        <td><strong>Royal Asian Noodle & Dim Sum Co.</strong></td>
+        <td><code>asian.noodles@gmail.com</code></td>
+        <td><span class="badge badge-sub">RN-2026-004</span></td>
+        <td>8. Royal Asian Noodle Bar (#8)<br>9. Golden Dragon Dim Sum House (#9)</td>
+      </tr>
+      <tr>
+        <td><strong>#5</strong></td>
+        <td><strong>Tokyo Ramen & Sushi Masters</strong></td>
+        <td><code>tokyo.izakaya@gmail.com</code></td>
+        <td><span class="badge badge-sub">TR-2026-005</span></td>
+        <td>10. Tokyo Tonkotsu Ramen House (#10)<br>11. Sakura Sushi & Sashimi Bar (#11)</td>
+      </tr>
+      <tr>
+        <td><strong>#6</strong></td>
+        <td><strong>Bella Napoli Italian Cuisine</strong></td>
+        <td><code>bella.napoli@gmail.com</code></td>
+        <td><span class="badge badge-sub">BN-2026-006</span></td>
+        <td>12. Bella Napoli Woodfired Pizza (#12)<br>13. Trattoria Roma Pasta Bar (#13)</td>
+      </tr>
+      <tr>
+        <td><strong>#7</strong></td>
+        <td><strong>Bangkok Wok & Night Market</strong></td>
+        <td><code>bangkok.wok@gmail.com</code></td>
+        <td><span class="badge badge-sub">BW-2026-007</span></td>
+        <td>14. Bangkok Street Pad Thai (#14)<br>15. Siam Spicy Wok & Tom Yum (#15)</td>
+      </tr>
+      <tr>
+        <td><strong>#8</strong></td>
+        <td><strong>Seoul K-Chicken & BBQ House</strong></td>
+        <td><code>seoul.kchicken@gmail.com</code></td>
+        <td><span class="badge badge-sub">SC-2026-008</span></td>
+        <td>16. Seoul Crispy K-Chicken (#16)<br>17. Gangnam Korean BBQ & Bowls (#17)</td>
+      </tr>
+      <tr>
+        <td><strong>#9</strong></td>
+        <td><strong>Taj Mahal Spice & Biryani Palace</strong></td>
+        <td><code>taj.spice@gmail.com</code></td>
+        <td><span class="badge badge-sub">TM-2026-009</span></td>
+        <td>18. Taj Mahal Royal Biryani (#18)<br>19. Mumbai Tandoori & Naan (#19)</td>
+      </tr>
+      <tr>
+        <td><strong>#10</strong></td>
+        <td><strong>Green Vitality & Organic Kitchen</strong></td>
+        <td><code>green.vitality@gmail.com</code></td>
+        <td><span class="badge badge-sub">GV-2026-010</span></td>
+        <td>20. Green Vitality Salad Bar (#20)<br>21. Pure Earth Vegan Bowls (#21)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size: 8.5pt; color: #666;">* Default authentication password for all merchant accounts: <code>123456</code>.</p>
+
+  <h2>4. Customer Privacy & Instant Logout Data Vanishing</h2>
+  <p>To comply with stringent data privacy standards and support multi-user shared devices:</p>
+  <ul>
+    <li><strong>Guest Browsing:</strong> Unauthenticated users can explore menus and store ratings, but cannot view invoices, loyalty points, or place orders without authenticating.</li>
+    <li><strong>Private Session:</strong> Customer login retrieves their dedicated address history and specific orders filtered by customer ID.</li>
+    <li><strong>Instant Logout Vanishing:</strong> When the customer clicks <em>"Log Out"</em>, the client state immediately executes:
+      <ul>
+        <li><code>cartItems.clear()</code> and <code>cartMerchant = null</code>: Shopping cart emptied.</li>
+        <li><code>customerOrders = []</code>: Past invoice records purged from view.</li>
+        <li><code>activeTrackingOrder = null</code>: Active live delivery tracking dismissed.</li>
+        <li>Customer address and identity tokens completely erased from client memory.</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2>5. End-to-End Kitchen Order Pipeline</h2>
+  <div class="flow-step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <strong>Order Placement (Status: PENDING):</strong> Customer completes checkout. Order inserted into <code>pos_db.transactions</code> with unique invoice number.
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <strong>Real-Time Kitchen Alert Banner:</strong> The merchant web portal auto-polls every 3 seconds. When a new ticket arrives, an animated pink notification banner alerts kitchen staff.
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <strong>Acceptance & Driver Dispatch (Status: DELIVERING):</strong> Kitchen clicks <em>"Agree & Accept Dish"</em>. Transaction status advances to DELIVERING and driver Sokha Chea is assigned.
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <strong>Completion & Revenue Settlement (Status: COMPLETED):</strong> Driver or merchant marks delivery completed. Financial ledger updates and customer tracker marks order finished.
+    </div>
+  </div>
+
+  <h2>6. MySQL Relational Schema (`pos_db`)</h2>
+  <ul>
+    <li><code>merchant_accounts</code>: <code>id</code> (PK), <code>account_name</code>, <code>email</code> (UNIQUE), <code>phone</code>, <code>company_reg_number</code>, <code>password</code></li>
+    <li><code>merchants</code>: <code>id</code> (PK), <code>account_id</code> (FK), <code>name</code>, <code>cuisine</code>, <code>rating</code>, <code>delivery_fee_usd</code>, <code>total_sales_usd</code></li>
+    <li><code>products</code>: <code>id</code> (PK), <code>merchant_id</code> (FK), <code>name</code>, <code>selling_price</code>, <code>category</code>, <code>image_url</code></li>
+    <li><code>customers</code>: <code>id</code> (PK), <code>name</code>, <code>phone</code> (UNIQUE), <code>email</code>, <code>password</code>, <code>default_address</code>, <code>loyalty_points</code></li>
+    <li><code>transactions</code>: <code>id</code> (PK), <code>invoice_number</code> (UNIQUE), <code>merchant_id</code> (FK), <code>customer_id</code> (FK), <code>grand_total_usd</code>, <code>status</code></li>
+    <li><code>transaction_items</code>: <code>id</code> (PK), <code>transaction_id</code> (FK), <code>product_id</code> (FK), <code>quantity</code>, <code>line_total</code></li>
+  </ul>
+
+  <h2>7. Recent UX & Stability Improvements</h2>
+  <ul>
+    <li><strong>Interactive Password Visibility:</strong> Eye toggle allows users and merchants to show/hide passwords during typing.</li>
+    <li><strong>Dynamic Delivery Address Editor:</strong> Customers can add, edit, or customize delivery addresses directly from the mobile UI.</li>
+    <li><strong>Port 8085 Conflict Resolution:</strong> Configured web runner to port 8085 to avoid conflicts with background Java/Tomcat instances on 8080.</li>
+    <li><strong>Zero-Overflow Responsive Layouts:</strong> Replaced rigid Row widgets with <code>SingleChildScrollView</code>, <code>LayoutBuilder</code>, and <code>Wrap</code>, preventing RenderFlex overflow exceptions on narrow viewports.</li>
+  </ul>
+
+  <div class="footer">
+    <span>SmartFood Multi-Tenant Architecture Document</span>
+    <span>Generated for Project Delivery • pos_db</span>
+  </div>
+
+</body>
+</html>

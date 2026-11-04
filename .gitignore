@@ -45,3 +45,23 @@ app.*.map.json
 /android/app/release
 # Widget Preview related
 .widget_preview/
+
+# --------------------------------------------------------------------------
+# Database & Connection Exclusions (Not Pushed to Git)
+# --------------------------------------------------------------------------
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.mdb
+
+# Database connection server & local environment
+/bin/
+/setup_database.bat
+/start_mysql.bat
+/run_app.bat
+/free_port_8080.bat
+FRIEND_SETUP_GUIDE.md
+.env
+.env.*
+
